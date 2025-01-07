@@ -7,6 +7,7 @@ const ContactsController = {
   removeContact,
   addContact,
   updateContact,
+  updateStatusContact,
 };
 
 async function listContacts() {
@@ -51,6 +52,24 @@ async function updateContact(contactId, body) {
     return updateContact;
   } catch (error) {
     console.error(error);
+  }
+}
+async function updateStatusContact(contactId, body) {
+  try {
+    if (!('favorite' in body)) {
+      throw new Error('Missing field favorite');
+    }
+
+    const updatedContact = await Contact.findByIdAndUpdate(
+      contactId,
+      { favorite: body.favorite },
+      { new: true }
+    );
+
+    return updatedContact;
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
 }
 
