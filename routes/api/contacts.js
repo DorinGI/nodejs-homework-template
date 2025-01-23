@@ -1,5 +1,6 @@
 const express = require('express');
 const Joi = require('joi');
+const auth = require('../../middlewares/auth');
 const {
   listContacts,
   getContactById,
@@ -10,6 +11,7 @@ const {
 } = require('../../controller/contactsController');
 
 const router = express.Router();
+router.use(auth);
 
 const contactSchema = Joi.object({
   name: Joi.string().required(),
@@ -33,6 +35,18 @@ router.get('/', async (req, res, next) => {
     console.error(error);
   }
 });
+router.get('/', auth, async (req, res) => {
+  const { page = 1, limit = 20, favorite } = req.query;
+  const skip = (page - 1) * limit;
+
+  const filter = { owner: req.user._id };
+  if (favorite) {
+    filter.favorite = favorite === 'true';
+  }
+
+  const contacts = await Contact.find(filter).skip(skip).limit(Number(limit));
+  res.status(200).json({ data: contacts });
+});
 
 router.get('/:contactId', async (req, res, next) => {
   try {
@@ -49,7 +63,7 @@ router.post('/', async (req, res, next) => {
     const { error } = contactSchema.validate(req.body);
     if (error) return res.status(400).json({ message: error.message });
 
-    const newContact = await addContact(req.body);
+    const newContact = await addContact(req.body, req.user);
     res.status(201).json({ message: 'New Contact created', data: newContact });
   } catch (error) {
     console.error(error);

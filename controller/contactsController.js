@@ -10,9 +10,9 @@ const ContactsController = {
   updateStatusContact,
 };
 
-async function listContacts() {
+async function listContacts(ownerId) {
   try {
-    const data = await Contact.find();
+    const data = await Contact.find({ owner: ownerId });
     return data;
   } catch (error) {
     console.error(error);
@@ -37,12 +37,15 @@ async function removeContact(contactId) {
   }
 }
 
-async function addContact(body) {
+async function addContact(body, user) {
   try {
-    const newContact = await Contact.create(body);
+    const { name, email, phone } = body;
+    const { _id: owner } = user;
+    const newContact = await Contact.create({ name, email, phone, owner });
     return newContact;
   } catch (error) {
     console.error(error);
+    throw error;
   }
 }
 
