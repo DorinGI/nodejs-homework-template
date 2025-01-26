@@ -4,6 +4,9 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const User = require('../../models/user');
 const auth = require('../../middlewares/auth');
+const gravatar = require('gravatar');
+const upload = require('../../middlewares/upload');
+const { updateAvatar } = require('../../controller/userController');
 
 const router = express.Router();
 
@@ -28,12 +31,19 @@ router.post('/signup', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, password: hashedPassword });
+    const avatarURL = gravatar.url(email, { s: '250', d: 'identicon' }, true);
+
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      avatarURL,
+    });
 
     res.status(201).json({
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
@@ -102,5 +112,9 @@ router.get('/current', auth, async (req, res) => {
   const { email, subscription } = req.user;
   res.status(200).json({ email, subscription });
 });
+
+// Update avatar
+
+router.patch('/avatars', auth, upload.single('avatar'), updateAvatar);
 
 module.exports = router;
